@@ -13,15 +13,17 @@ namespace Microsoft.EntityFrameworkCore.Query
 {
     public class DbFunctionsSqlServerTest : DbFunctionsTestBase<NorthwindQuerySqlServerFixture<NoopModelCustomizer>>
     {
-        public DbFunctionsSqlServerTest(NorthwindQuerySqlServerFixture<NoopModelCustomizer> fixture, ITestOutputHelper testOutputHelper)
+        public DbFunctionsSqlServerTest(
+            NorthwindQuerySqlServerFixture<NoopModelCustomizer> fixture, ITestOutputHelper testOutputHelper)
             : base(fixture)
         {
             Fixture.TestSqlLoggerFactory.Clear();
+            //Fixture.TestSqlLoggerFactory.SetTestOutputHelper(testOutputHelper);
         }
 
-        public override void String_Like_Literal()
+        public override void Like_literal()
         {
-            base.String_Like_Literal();
+            base.Like_literal();
 
             AssertSql(
                 @"SELECT COUNT(*)
@@ -29,9 +31,9 @@ FROM [Customers] AS [c]
 WHERE [c].[ContactName] LIKE N'%M%'");
         }
 
-        public override void String_Like_Identity()
+        public override void Like_identity()
         {
-            base.String_Like_Identity();
+            base.Like_identity();
 
             AssertSql(
                 @"SELECT COUNT(*)
@@ -39,9 +41,9 @@ FROM [Customers] AS [c]
 WHERE [c].[ContactName] LIKE [c].[ContactName]");
         }
 
-        public override void String_Like_Literal_With_Escape()
+        public override void Like_literal_with_escape()
         {
-            base.String_Like_Literal_With_Escape();
+            base.Like_literal_with_escape();
 
             AssertSql(
                 @"SELECT COUNT(*)
@@ -52,7 +54,7 @@ WHERE [c].[ContactName] LIKE N'!%' ESCAPE N'!'");
 #if !Test20
         [ConditionalFact]
         [SqlServerCondition(SqlServerCondition.SupportsFullTextSearch)]
-        public async void FreeText_Search_Literal()
+        public async void FreeText_literal()
         {
             using (var context = CreateContext())
             {
@@ -70,7 +72,7 @@ WHERE FREETEXT([c].[Title], N'Representative')");
         }
 
         [ConditionalFact]
-        public void FreeText_InMemoryUse_Throws()
+        public void FreeText_client_eval_throws()
         {
             Assert.Throws<InvalidOperationException>(() => EF.Functions.FreeText("teststring", "teststring"));
             Assert.Throws<InvalidOperationException>(() => EF.Functions.FreeText("teststring", "teststring", 1033));
@@ -78,7 +80,7 @@ WHERE FREETEXT([c].[Title], N'Representative')");
 
         [ConditionalFact]
         [SqlServerCondition(SqlServerCondition.SupportsFullTextSearch)]
-        public void FreeText_Search_Multiple_Words()
+        public void FreeText_multiple_words()
         {
             using (var context = CreateContext())
             {
@@ -97,7 +99,7 @@ WHERE FREETEXT([c].[Title], N'Representative Sales')");
 
         [ConditionalFact]
         [SqlServerCondition(SqlServerCondition.SupportsFullTextSearch)]
-        public void FreeText_Search_With_Language()
+        public void FreeText_with_language_term()
         {
             using (var context = CreateContext())
             {
@@ -114,7 +116,7 @@ WHERE FREETEXT([c].[Title], N'President', LANGUAGE 1033)");
 
         [ConditionalFact]
         [SqlServerCondition(SqlServerCondition.SupportsFullTextSearch)]
-        public void FreeText_Search_Multiple_Words_With_Language()
+        public void FreeText_with_multiple_words_and_language_term()
         {
             using (var context = CreateContext())
             {
@@ -133,7 +135,7 @@ WHERE FREETEXT([c].[Title], N'Representative President', LANGUAGE 1033)");
 
         [ConditionalFact]
         [SqlServerCondition(SqlServerCondition.SupportsFullTextSearch)]
-        public void FreeText_Search_Multiple_FullText_Calls()
+        public void FreeText_multiple_predicates()
         {
             using (var context = CreateContext())
             {
@@ -153,7 +155,7 @@ WHERE (FREETEXT([c].[City], N'London')) AND (FREETEXT([c].[Title], N'Manager', L
 
         [ConditionalFact]
         [SqlServerCondition(SqlServerCondition.SupportsFullTextSearch)]
-        public void FreeText_Search_Throws_With_No_FullText_Index()
+        public void FreeText_throws_for_no_FullText_index()
         {
             using (var context = CreateContext())
             {
@@ -164,7 +166,7 @@ WHERE (FREETEXT([c].[City], N'London')) AND (FREETEXT([c].[Title], N'Manager', L
 
         [ConditionalFact]
         [SqlServerCondition(SqlServerCondition.SupportsFullTextSearch)]
-        public void FreeText_Search_Navigation_Property()
+        public void FreeText_through_navigation()
         {
             using (var context = CreateContext())
             {
@@ -186,7 +188,7 @@ WHERE ((FREETEXT([c.Manager].[Title], N'President')) AND (FREETEXT([c].[Title], 
 
         [ConditionalFact]
         [SqlServerCondition(SqlServerCondition.SupportsFullTextSearch)]
-        public void FreeText_Search_Navigation_Property_With_Languages()
+        public void FreeText_through_navigation_with_language_terms()
         {
             using (var context = CreateContext())
             {
@@ -208,7 +210,7 @@ WHERE ((FREETEXT([c.Manager].[Title], N'President', LANGUAGE 1033)) AND (FREETEX
 
         [ConditionalFact]
         [SqlServerCondition(SqlServerCondition.SupportsFullTextSearch)]
-        public async void FreeText_Search_Throws_When_Using_Non_Parameter_Or_Constant_Expression()
+        public async void FreeText_throws_when_using_non_parameter_or_constant_for_freetext_string()
         {
             using (var context = CreateContext())
             {
@@ -223,6 +225,29 @@ WHERE ((FREETEXT([c.Manager].[Title], N'President', LANGUAGE 1033)) AND (FREETEX
                 await Assert.ThrowsAsync<SqlException>(
                     async () => await context.Employees.FirstOrDefaultAsync(
                         e => EF.Functions.FreeText(e.City, e.FirstName.ToUpper())));
+            }
+        }
+
+        [ConditionalFact]
+        [SqlServerCondition(SqlServerCondition.SupportsFullTextSearch)]
+        public async void FreeText_throws_when_using_non_column_for_proeprty_reference()
+        {
+            using (var context = CreateContext())
+            {
+                await Assert.ThrowsAsync<InvalidOperationException>(
+                    async () => await context.Employees.FirstOrDefaultAsync(
+                        e => EF.Functions.FreeText(e.City + "1", "President")));
+
+                await Assert.ThrowsAsync<InvalidOperationException>(
+                    async () => await context.Employees.FirstOrDefaultAsync(
+                        e => EF.Functions.FreeText(e.City.ToLower(), "President")));
+
+                await Assert.ThrowsAsync<InvalidOperationException>(
+                    async () => await (from e1 in context.Employees
+                                       join m1 in context.Employees.OrderBy(e => e.EmployeeID).Skip(0)
+                                       on e1.ReportsTo equals m1.EmployeeID
+                                       where EF.Functions.FreeText(m1.Title, "President")
+                                       select e1).LastOrDefaultAsync());
             }
         }
 
