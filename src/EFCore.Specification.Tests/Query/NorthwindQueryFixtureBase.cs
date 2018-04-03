@@ -52,6 +52,7 @@ namespace Microsoft.EntityFrameworkCore.Query
                     .Log(CoreEventId.RowLimitingOperationWithoutOrderByWarning)
                     .Log(CoreEventId.FirstWithoutOrderByAndFilterWarning)
                     .Log(CoreEventId.PossibleUnintendedCollectionNavigationNullComparisonWarning)
-                    .Log(CoreEventId.PossibleUnintendedReferenceComparisonWarning));
+                    .Log(CoreEventId.PossibleUnintendedReferenceComparisonWarning)
+                    .Log(CoreEventId.PossibleUnintendedAnonymousObjectOrderingWarning));
     }
 }

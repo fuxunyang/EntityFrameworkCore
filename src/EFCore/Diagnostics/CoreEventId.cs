@@ -64,6 +64,7 @@ namespace Microsoft.EntityFrameworkCore.Diagnostics
             QueryExecutionPlanned,
             PossibleUnintendedCollectionNavigationNullComparisonWarning,
             PossibleUnintendedReferenceComparisonWarning,
+            PossibleUnintendedAnonymousObjectOrderingWarning,
 
             // Infrastructure events
             SensitiveDataLoggingEnabledWarning = CoreBaseId + 400,
@@ -259,6 +260,20 @@ namespace Microsoft.EntityFrameworkCore.Diagnostics
         /// </summary>
         public static readonly EventId PossibleUnintendedReferenceComparisonWarning
             = MakeQueryId(Id.PossibleUnintendedReferenceComparisonWarning);
+
+        /// <summary>
+        ///     <para>
+        ///         Possible unintended anonymous object ordering.
+        ///     </para>
+        ///     <para>
+        ///         This event is in the <see cref="DbLoggerCategory.Query" /> category.
+        ///     </para>
+        ///     <para>
+        ///         This event uses the <see cref="ExpressionEventData" /> payload when used with a <see cref="DiagnosticSource" />.
+        ///     </para>
+        /// </summary>
+        public static readonly EventId PossibleUnintendedAnonymousObjectOrderingWarning
+            = MakeQueryId(Id.PossibleUnintendedAnonymousObjectOrderingWarning);
 
         private static readonly string _infraPrefix = DbLoggerCategory.Infrastructure.Name + ".";
         private static EventId MakeInfraId(Id id) => new EventId((int)id, _infraPrefix + id);

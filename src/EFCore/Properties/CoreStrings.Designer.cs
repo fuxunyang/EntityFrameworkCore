@@ -2149,6 +2149,19 @@ namespace Microsoft.EntityFrameworkCore.Internal
                     _resourceManager.GetString("LogPossibleUnintendedReferenceComparison")));
 
         /// <summary>
+        ///     Ordering based on anonymous object '{anonymousObject}' is not supported and will be ignored. Use 'OrderBy().ThenBy()' to apply ordering based on multiple properties.
+        /// </summary>
+        public static readonly EventDefinition<object> LogPossibleUnintendedAnonymousObjectOrdering
+            = new EventDefinition<object>(
+                CoreEventId.PossibleUnintendedAnonymousObjectOrderingWarning,
+                LogLevel.Warning,
+                "CoreEventId.PossibleUnintendedAnonymousObjectOrderingWarning",
+                LoggerMessage.Define<object>(
+                    LogLevel.Warning,
+                    CoreEventId.PossibleUnintendedAnonymousObjectOrderingWarning,
+                    _resourceManager.GetString("LogPossibleUnintendedAnonymousObjectOrdering")));
+
+        /// <summary>
         ///     The same entity is being tracked as different weak entity types '{dependent1}' and '{dependent2}'. If a property value changes it will result in two store changes, which might not be the desired outcome.
         /// </summary>
         public static readonly EventDefinition<string, string> LogDuplicateDependentEntityTypeInstance

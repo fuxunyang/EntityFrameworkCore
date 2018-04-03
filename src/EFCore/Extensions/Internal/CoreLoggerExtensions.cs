@@ -515,6 +515,43 @@ namespace Microsoft.EntityFrameworkCore.Internal
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
+        public static void PossibleUnintendedAnonymousObjectOrderingWarning(
+            [NotNull] this IDiagnosticsLogger<DbLoggerCategory.Query> diagnostics,
+            [NotNull] Expression anonymousObject)
+        {
+            var definition = CoreStrings.LogPossibleUnintendedAnonymousObjectOrdering;
+
+            var warningBehavior = definition.GetLogBehavior(diagnostics);
+            if (warningBehavior != WarningBehavior.Ignore)
+            {
+                definition.Log(
+                    diagnostics,
+                    warningBehavior,
+                    anonymousObject);
+            }
+
+            if (diagnostics.DiagnosticSource.IsEnabled(definition.EventId.Name))
+            {
+                diagnostics.DiagnosticSource.Write(
+                    definition.EventId.Name,
+                    new ExpressionEventData(
+                        definition,
+                        PossibleUnintendedAnonymousObjectOrderingWarning,
+                        anonymousObject));
+            }
+        }
+
+        private static string PossibleUnintendedAnonymousObjectOrderingWarning(EventDefinitionBase definition, EventData payload)
+        {
+            var d = (EventDefinition<object>)definition;
+            var p = (ExpressionEventData)payload;
+            return d.GenerateMessage(p.Expression);
+        }
+
+        /// <summary>
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
         public static void ServiceProviderCreated(
             [NotNull] this IDiagnosticsLogger<DbLoggerCategory.Infrastructure> diagnostics,
             [NotNull] IServiceProvider serviceProvider)

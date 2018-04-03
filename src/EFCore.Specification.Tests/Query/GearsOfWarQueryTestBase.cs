@@ -3374,6 +3374,20 @@ namespace Microsoft.EntityFrameworkCore.Query
         }
 
         [ConditionalFact]
+        public virtual void Correlated_collections_basic_projecting_constant_bool()
+        {
+            AssertQuery<Gear>(
+                gs => from g in gs
+                      where g.Nickname != "Marcus"
+                      orderby g.Nickname
+                      select (from w in g.Weapons
+                              where w.IsAutomatic || w.Name != "foo"
+                              select true).ToList(),
+                assertOrder: true,
+                elementAsserter: CollectionAsserter<bool>());
+        }
+
+        [ConditionalFact]
         public virtual void Correlated_collections_projection_of_collection_thru_navigation()
         {
             AssertQuery<Gear>(
@@ -4630,6 +4644,139 @@ namespace Microsoft.EntityFrameworkCore.Query
         {
             AssertQuery<Squad>(
                 ss => ss.Where(s => s.Name == "Kilo").Where(s => s.Members.Where(m => m.HasSoulPatch).Select(m => m.SquadId).FirstOrDefault() != 0).Select(s => s.Name));
+        }
+
+        [ConditionalFact]
+        public virtual void Select_subquery_projecting_single_constant_int()
+        {
+            AssertQuery<Squad>(
+                ss => ss.Select(s => new { s.Name, Gear = s.Members.Where(g => g.HasSoulPatch).Select(g => 42).FirstOrDefault() }));
+        }
+
+        [ConditionalFact]
+        public virtual void Select_subquery_projecting_single_constant_string()
+        {
+            AssertQuery<Squad>(
+                ss => ss.Select(s => new { s.Name, Gear = s.Members.Where(g => g.HasSoulPatch).Select(g => "Foo").FirstOrDefault() }));
+        }
+
+        [ConditionalFact]
+        public virtual void Select_subquery_projecting_single_constant_bool()
+        {
+            AssertQuery<Squad>(
+                ss => ss.Select(s => new { s.Name, Gear = s.Members.Where(g => g.HasSoulPatch).Select(g => true).FirstOrDefault() }));
+        }
+
+        [ConditionalFact]
+        public virtual void Select_subquery_projecting_single_constant_inside_anonymous()
+        {
+            AssertQuery<Squad>(
+                ss => ss.Select(s => new { s.Name, Gear = s.Members.Where(g => g.HasSoulPatch).Select(g => new { One = 1 }).FirstOrDefault() }));
+        }
+
+        [ConditionalFact]
+        public virtual void Select_subquery_projecting_multiple_constants_inside_anonymous()
+        {
+            AssertQuery<Squad>(
+                ss => ss.Select(s => new { s.Name, Gear = s.Members.Where(g => g.HasSoulPatch).Select(g => new { True = true, False = false }).FirstOrDefault() }));
+        }
+
+        [ConditionalFact]
+        public virtual void Order_by_anonymous_type1()
+        {
+            AssertQuery<Squad>(
+                ss => ss.OrderByDescending(s => new { s.Name }),
+                expectedQuery: ss => ss);
+        }
+
+        [ConditionalFact]
+        public virtual void Order_by_anonymous_type2()
+        {
+            AssertQuery<Squad>(
+                ss => ss.OrderByDescending(s => new { Number = 42, s.Name, s.Id }),
+                expectedQuery: ss => ss);
+        }
+
+        [ConditionalFact]
+        public virtual void Include_with_order_by_constant()
+        {
+            AssertIncludeQuery<Squad>(
+                ss => ss.Include(s => s.Members).OrderBy(s => 42),
+                expectedQuery: ss => ss,
+                new List <IExpectedInclude> { new ExpectedInclude<Squad>(s => s.Members, "Members") });
+        }
+
+        [ConditionalFact(Skip = "isssue #11567")]
+        public virtual void Include_with_order_by_anonymous_type1()
+        {
+            AssertIncludeQuery<Squad>(
+                ss => ss.Include(s => s.Members).OrderBy(s => new { Answer = 42 }),
+                ss => ss,
+                new List<IExpectedInclude> { new ExpectedInclude<Squad>(s => s.Members, "Members") });
+        }
+
+        [ConditionalFact]
+        public virtual void Include_with_order_by_anonymous_type2()
+        {
+            AssertIncludeQuery<Squad>(
+                ss => ss.Include(s => s.Members).OrderBy(s => new { s.Name, One = 1, Two = 2, Three = 3 }),
+                ss => ss,
+                new List<IExpectedInclude> { new ExpectedInclude<Squad>(s => s.Members, "Members") });
+        }
+
+        [ConditionalFact]
+        public virtual void Include_with_order_by_anonymous_type3()
+        {
+            AssertIncludeQuery<Gear>(
+                gs => gs.Include(g => g.Weapons).OrderBy(g => new { g.Rank }),
+                gs => gs,
+                new List<IExpectedInclude> { new ExpectedInclude<Gear>(g => g.Weapons, "Weapons") });
+        }
+
+        [ConditionalFact]
+        public virtual void Include_with_order_by_anonymous_type4()
+        {
+            AssertIncludeQuery<Gear>(
+                gs => gs.Include(g => g.Weapons)
+                    .OrderBy(g => new { g.Rank })
+                    .ThenByDescending(g => g.FullName)
+                    .ThenByDescending(g => new { One = 1, g.HasSoulPatch }),
+                gs => gs,
+                new List<IExpectedInclude> { new ExpectedInclude<Gear>(g => g.Weapons, "Weapons") });
+        }
+
+        [ConditionalFact]
+        public virtual void Include_groupby_constant()
+        {
+            using (var ctx = CreateContext())
+            {
+                var query = ctx.Squads.Include(s => s.Members).GroupBy(s => 1);
+                var result = query.ToList();
+
+                Assert.Equal(1, result.Count);
+                var bucket = result[0].ToList();
+                Assert.Equal(2, bucket.Count);
+                Assert.NotNull(bucket[0].Members);
+                Assert.NotNull(bucket[1].Members);
+            }
+        }
+
+        [ConditionalFact]
+        public virtual void Include_groupby_anonymous_type()
+        {
+            using (var ctx = CreateContext())
+            {
+                var query = ctx.Squads.Include(s => s.Members).GroupBy(s => new { Key = s.Name });
+                var result = query.ToList();
+
+                Assert.Equal(2, result.Count);
+                var bucket1 = result[0].ToList();
+                var bucket2 = result[1].ToList();
+                Assert.Equal(1, bucket1.Count);
+                Assert.Equal(1, bucket2.Count);
+                Assert.NotNull(bucket1[0].Members);
+                Assert.NotNull(bucket2[0].Members);
+            }
         }
 
         // Remember to add any new tests to Async version of this test class
