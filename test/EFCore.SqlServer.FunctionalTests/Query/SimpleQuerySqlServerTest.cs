@@ -3,6 +3,7 @@
 
 using System;
 using System.Linq;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.TestModels.Northwind;
 using Microsoft.EntityFrameworkCore.TestUtilities;
 using Xunit;
@@ -116,6 +117,63 @@ FROM [Orders] AS [c1_Orders]");
         private static T Scoper<T>(Func<T> getter)
         {
             return getter();
+        }
+
+        [Fact]
+        public virtual void Multiple_context_instances()
+        {
+            using (var context1 = new NorthwindRelationalContext(Fixture.CreateOptions()))
+            {
+                using (var context2 = new NorthwindRelationalContext(Fixture.CreateOptions()))
+                {
+                    Assert.Equal(
+                        CoreStrings.ErrorInvalidQueryable,
+                        Assert.Throws<InvalidOperationException>(
+                            () =>
+                                (from c in context1.Customers
+                                 from o in context2.Set<Order>()
+                                 select c).First()).Message);
+                }
+            }
+        }
+
+        [Fact]
+        public virtual void Multiple_context_instances_set()
+        {
+            using (var context1 = new NorthwindRelationalContext(Fixture.CreateOptions()))
+            {
+                using (var context2 = new NorthwindRelationalContext(Fixture.CreateOptions()))
+                {
+                    var set = context2.Orders;
+
+                    Assert.Equal(
+                        CoreStrings.ErrorInvalidQueryable,
+                        Assert.Throws<InvalidOperationException>(
+                            () => (from c in context1.Customers
+                                   from o in set
+                                   select c).First()).Message);
+                }
+            }
+        }
+
+        [Fact]
+        public virtual void Multiple_context_instances_parameter()
+        {
+            using (var context1 = new NorthwindRelationalContext(Fixture.CreateOptions()))
+            {
+                using (var context2 = new NorthwindRelationalContext(Fixture.CreateOptions()))
+                {
+                    Customer Query(NorthwindContext c2) =>
+                        (from c in context1.Customers
+                         from o in c2.Orders
+                         select c).First();
+
+                    Assert.Equal(
+                        CoreStrings.ErrorInvalidQueryable,
+                        Assert.Throws<InvalidOperationException>(
+                            () => Query(context2)).Message);
+                }
+            }
         }
 
         public override void Local_array()
