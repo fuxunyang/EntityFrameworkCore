@@ -39,7 +39,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata
         /// <param name="name"> The key of the annotation to be added. </param>
         /// <param name="value"> The value to be stored in the annotation. </param>
         /// <returns> The newly added annotation. </returns>
-        Annotation AddAnnotation([NotNull] string name, [NotNull] object value);
+        Annotation AddAnnotation([NotNull] string name, [CanBeNull] object value);
 
         /// <summary>
         ///     Gets the annotation with the given name, returning null if it does not exist.

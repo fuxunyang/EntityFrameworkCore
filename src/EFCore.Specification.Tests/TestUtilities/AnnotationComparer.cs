@@ -16,7 +16,7 @@ namespace Microsoft.EntityFrameworkCore.TestUtilities
         {
         }
 
-        public int Compare(IAnnotation x, IAnnotation y) => StringComparer.Ordinal.Compare(x.Name, y.Name);
+        public int Compare(IAnnotation x, IAnnotation y) => StringComparer.Ordinal.Compare(x?.Name, y?.Name);
 
         public bool Equals(IAnnotation x, IAnnotation y)
         {
@@ -33,9 +33,9 @@ namespace Microsoft.EntityFrameworkCore.TestUtilities
             return x.Name == y.Name
                    && (x.Name == CoreAnnotationNames.ValueGeneratorFactoryAnnotation
                        || x.Name == CoreAnnotationNames.TypeMapping
-                       || x.Value.Equals(y.Value));
+                       || Equals(x.Value, y.Value));
         }
 
-        public int GetHashCode(IAnnotation obj) => obj.Name.GetHashCode() ^ obj.Value.GetHashCode();
+        public int GetHashCode(IAnnotation obj) => obj.Name.GetHashCode() ^ obj.Value?.GetHashCode() ?? 0;
     }
 }

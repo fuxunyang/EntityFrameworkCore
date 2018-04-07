@@ -47,7 +47,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
             var existingAnnotation = Metadata.FindAnnotation(name);
             if (existingAnnotation != null)
             {
-                if (existingAnnotation.Value.Equals(value))
+                if (Equals(existingAnnotation.Value, value))
                 {
                     existingAnnotation.UpdateConfigurationSource(configurationSource);
                     return true;
@@ -58,23 +58,12 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                     return false;
                 }
 
-                if (value == null)
-                {
-                    var removed = Metadata.RemoveAnnotation(name);
-                    Debug.Assert(removed == existingAnnotation);
-                }
-                else
-                {
-                    Metadata.SetAnnotation(name, value, configurationSource);
-                }
+                Metadata.SetAnnotation(name, value, configurationSource);
 
                 return true;
             }
 
-            if (value != null)
-            {
-                Metadata.AddAnnotation(name, value, configurationSource);
-            }
+            Metadata.AddAnnotation(name, value, configurationSource);
 
             return true;
         }
@@ -97,7 +86,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         private static bool CanSetAnnotationValue(
             ConventionalAnnotation annotation, object value, ConfigurationSource configurationSource, bool canOverrideSameSource)
         {
-            if (annotation.Value.Equals(value))
+            if (Equals(annotation.Value, value))
             {
                 return true;
             }
